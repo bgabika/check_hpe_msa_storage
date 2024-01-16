@@ -16,12 +16,12 @@ COREX check HPE MSA 2050 storage plugin for Icinga 2 v1.1
 # ./check_hpe_msa_storage.py --hostname mystorage.mydomain.com --username monitor --password monitorpassword --subcommand system
 OK - MSA 2050 SAN is OK.
 product id                              MSA 2050 SAN
-system name                             HUBUDMSA2050
-midplane serial number                  00C0FF5002D4
+system name                             storage-MSA2050
+midplane serial number                  00C0FF509899
 system health                           OK
 system health reason                    None
 other MC status                         Operational
-#
+
 </code></pre>
 
 <pre><code>
@@ -60,7 +60,6 @@ ip address                              192.168.76.217
 mac address                             00:BB:CC:DD:A3:B1
 controller health reason                None
 controller health recommendation        None
-#
 
 </code></pre>
 
