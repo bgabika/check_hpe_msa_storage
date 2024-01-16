@@ -13,7 +13,7 @@ COREX check HPE MSA 2050 storage plugin for Icinga 2 v1.1
 
 <pre><code>
 # cd /usr/lib/nagios/plugins
-# ./check_hpe_msa_storage --hostname mystorage.mydomain.com --username monitor --password monitorpassword --subcommand system
+# ./check_hpe_msa_storage.py --hostname mystorage.mydomain.com --username monitor --password monitorpassword --subcommand system
 OK - MSA 2050 SAN is OK.
 product id                              MSA 2050 SAN
 system name                             HUBUDMSA2050
@@ -26,7 +26,7 @@ other MC status                         Operational
 
 <pre><code>
 # cd /usr/lib/nagios/plugins
-# ./check_hpe_msa_storage --hostname mystorage.mydomain.com --username monitor --password monitorpassword --subcommand controllers
+# ./check_hpe_msa_storage.py --hostname mystorage.mydomain.com --username monitor --password monitorpassword --subcommand controllers
 OK - A is OK.
 OK - B is OK.
 
