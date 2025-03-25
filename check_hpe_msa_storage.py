@@ -4,11 +4,11 @@
 # COREX check HPE MSA 2050 storage plugin for Icinga 2
 # Copyright (C) 2019-2023, Gabor Borsos <bg@corex.bg>
 # 
-# v1.1 built on 2024.01.01.
+# v1.21 built on 2025.03.22.
 # usage: check_hpe_msa_storage.py --help
 #
 # For bugs and feature requests mailto bg@corex.bg
-# 
+# v1.21 bug fixes, add --verbose option to control plugin output details
 # ---------------------------------------------------------------
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -70,13 +70,15 @@ class CheckMSA:
             {self.pluginname} --hostname mystorage.mydomain.com --username monitor --password monitorpassword --subcommand sensor-status --sensor-temp-warning 50 --sensor-temp-critical 60
             """))
 
-        check_options = parser.add_argument_group('SHA256 arguments for authentication', 'hostname, username, password')
+        check_options = parser.add_argument_group('SHA256 arguments for authentication', 'hostname, username, password, verbose')
         check_options.add_argument('--hostname', dest='hostname', metavar='MDA HOSTNAME', type=str, required=True,
                                         help='MDA hostname or FQDN')
         check_options.add_argument('--username', dest='username', metavar='MDA USERNAME', type=str, required=True,
                                         help='MDA username to create SHA256 string, --username monitoruser')
         check_options.add_argument('--password', dest='password', metavar='MDA PASSWORD', type=str, required=True,
                                         help='MDA password to create SHA256 string, --password monitorpasswordword')
+        check_options.add_argument('--verbose', dest='verbose', metavar='VERBOSE OUTPUT', type=str, default="True",
+                                        help='Verbose plugin output, True/False, default True')
 
         check_procedure = parser.add_argument_group('check arguments', 'controllers, disk-groups, disks, fans, frus, network-parameters, pools, ports, power-supplies, sensor-status, system, volumes, volume-statistics')
 
@@ -106,44 +108,44 @@ class CheckMSA:
                                         help='Ignore sensor from "sensors" checking, use exact device name in argument, e.g. --ignore-psu "PSU 2, Right" ', default=[])
         check_procedure.add_argument('--ignore-volume', dest='ignore_volume_list', action='append', metavar='IGNORE-VOLUME',
                                         help='Ignore volume from "volumes" checking, e.g. --ignore-volume "myvol2" ', default=[])
-        check_procedure.add_argument('--disk-life-left-limit', dest='disk_life_left_limit', type=int,
-                                        help='Warning limit threshold for disk life left checking in percent. --disk-life-left-limit 50')
-        check_procedure.add_argument('--disk-poh-limit', dest='disk_poh_limit', type=int,
-                                        help='Warning limit threshold for disk power on hours checking, --disk-poh-limit 45000')
-        check_procedure.add_argument('--sensor-temp-warning', dest='sensor_temp_warning', type=int,
-                                        help='Warning threshold for controller/cpu temperature in "sensor-status" checking, --sensor-temp-warning 70')
-        check_procedure.add_argument('--sensor-temp-critical', dest='sensor_temp_critical', type=int,
-                                        help='Critical threshold for controller/cpu temperature in "sensor-status" checking, --sensor-temp-critical 80')
-        check_procedure.add_argument('--disk-temp-warning', dest='disk_temp_warning', type=int,
-                                        help='Warning threshold for disk temperature on hours checking, --disk-temp-warning 50')
-        check_procedure.add_argument('--disk-temp-critical', dest='disk_temp_critical', type=int,
-                                        help='Critical threshold for disk temperature on hours checking, --disk-temp-critical 60')
-        check_procedure.add_argument('--fan-speed-low-limit', dest='fan_speed_low_limit', type=int,
-                                        help='Warning lower speed limit threshold for fan checking, --fan-speed-low-limit 500')
-        check_procedure.add_argument('--pool-size-warning', dest='pool_size_warning', type=int,
-                                        help='Warning threshold for pool usage checking in percent. --pool-size-warning 85')
-        check_procedure.add_argument('--pool-size-critical', dest='pool_size_critical', type=int,
-                                        help='Critical threshold for pool usage checking in percent. --pool-size-critical 95')
-        check_procedure.add_argument('--volume-size-warning', dest='volume_size_warning', type=int,
-                                        help='Warning threshold for volume usage checking in percent. --volume-size-warning 85')
-        check_procedure.add_argument('--volume-size-critical', dest='volume_size_critical', type=int,
-                                        help='Critical threshold for volume usage checking in percent. --volume-size-critical 95')
-        check_procedure.add_argument('--media-errors-1-limit', dest='media_errors_1_limit', type=int,
-                                        help='Number of Media Errors Port 1 warning threshold for "disk" checking, --media-errors-1-limit 5')
-        check_procedure.add_argument('--media-errors-2-limit', dest='media_errors_2_limit', type=int,
-                                        help='Number of Media Errors Port 2 warning threshold for "disk" checking, --media-errors-2-limit 5')
-        check_procedure.add_argument('--nonmedia-errors-1-limit', dest='nonmedia_errors_1_limit', type=int,
-                                        help='Number of Non-media Errors Port 1 warning threshold for "disk" checking, --nonmedia-errors-1-limit 5')
-        check_procedure.add_argument('--nonmedia-errors-2-limit', dest='nonmedia_errors_2_limit', type=int,
-                                        help='Number of Non-media Errors Port 2 warning threshold for "disk" checking, --nonmedia-errors-2-limit 5')
-        check_procedure.add_argument('--block-reassigns-1-limit', dest='block_reassigns_1_limit', type=int,
-                                        help='Number of Block Reassignments Port 1 warning threshold for "disk" checking, --block-reassigns-1-limit 5')
-        check_procedure.add_argument('--block-reassigns-2-limit', dest='block_reassigns_2_limit', type=int,
-                                        help='Number of Block Reassignments Port 2 warning threshold for "disk" checking, --block-reassigns-2-limit 5')
-        check_procedure.add_argument('--bad-blocks-1-limit', dest='bad_blocks_1_limit', type=int,
-                                        help='Number of Bad Blocks Port 1 warning threshold for "disk" checking, --bad-blocks-1-limit 5')
-        check_procedure.add_argument('--bad-blocks-2-limit', dest='bad_blocks_2_limit', type=int,
-                                        help='Number of Bad Blocks Port 2 warning threshold for "disk" checking, --bad-blocks-2-limit 5')
+        check_procedure.add_argument('--disk-life-left-limit', dest='disk_life_left_limit', type=int, default=30,
+                                        help='Warning limit threshold for disk life left checking in percent, default is 30%. --disk-life-left-limit 50')
+        check_procedure.add_argument('--disk-poh-limit', dest='disk_poh_limit', type=int, default=60000,
+                                        help='Warning limit threshold for disk power on hours checking, default is 60000, --disk-poh-limit 45000')
+        check_procedure.add_argument('--sensor-temp-warning', dest='sensor_temp_warning', type=int, default=70,
+                                        help='Warning threshold for controller/cpu temperature in "sensor-status" checking, default is 70, --sensor-temp-warning 60')
+        check_procedure.add_argument('--sensor-temp-critical', dest='sensor_temp_critical', type=int, default=80,
+                                        help='Critical threshold for controller/cpu temperature in "sensor-status" checking, default is 80, --sensor-temp-critical 75')
+        check_procedure.add_argument('--disk-temp-warning', dest='disk_temp_warning', type=int, default=70,
+                                        help='Warning threshold for disk temperature checking, default is 70, --disk-temp-warning 50')
+        check_procedure.add_argument('--disk-temp-critical', dest='disk_temp_critical', type=int, default=90,
+                                        help='Critical threshold for disk temperature checking, default is 90, --disk-temp-critical 60')
+        check_procedure.add_argument('--fan-speed-low-limit', dest='fan_speed_low_limit', type=int, default=100,
+                                        help='Warning lower speed limit threshold for fan checking, default is 100, --fan-speed-low-limit 500')
+        check_procedure.add_argument('--pool-size-warning', dest='pool_size_warning', type=int, default=85,
+                                        help='Warning threshold for pool usage checking in percent, default is 85, --pool-size-warning 75')
+        check_procedure.add_argument('--pool-size-critical', dest='pool_size_critical', type=int, default=95,
+                                        help='Critical threshold for pool usage checking in percent, default is 95, --pool-size-critical 90')
+        check_procedure.add_argument('--volume-size-warning', dest='volume_size_warning', type=int,  default=85,
+                                        help='Warning threshold for volume-statistics checking in percent, default is 85, --volume-size-warning 75')
+        check_procedure.add_argument('--volume-size-critical', dest='volume_size_critical', type=int, default=95,
+                                        help='Critical threshold for volume-statistics usage checking in percent, default is 95, --volume-size-critical 90')
+        check_procedure.add_argument('--media-errors-1-limit', dest='media_errors_1_limit', type=int, default=1,
+                                        help='Number of Media Errors Port 1 warning threshold for "disk" checking, default is 1, --media-errors-1-limit 5')
+        check_procedure.add_argument('--media-errors-2-limit', dest='media_errors_2_limit', type=int, default=1,
+                                        help='Number of Media Errors Port 2 warning threshold for "disk" checking, default is 1, --media-errors-2-limit 5')
+        check_procedure.add_argument('--nonmedia-errors-1-limit', dest='nonmedia_errors_1_limit', type=int,  default=1,
+                                        help='Number of Non-media Errors Port 1 warning threshold for "disk" checking, default is 1, --nonmedia-errors-1-limit 5')
+        check_procedure.add_argument('--nonmedia-errors-2-limit', dest='nonmedia_errors_2_limit', type=int, default=1,
+                                        help='Number of Non-media Errors Port 2 warning threshold for "disk" checking, default is 1, --nonmedia-errors-2-limit 5')
+        check_procedure.add_argument('--block-reassigns-1-limit', dest='block_reassigns_1_limit', type=int, default=1,
+                                        help='Number of Block Reassignments Port 1 warning threshold for "disk" checking, default is 1, --block-reassigns-1-limit 5')
+        check_procedure.add_argument('--block-reassigns-2-limit', dest='block_reassigns_2_limit', type=int, default=1,
+                                        help='Number of Block Reassignments Port 2 warning threshold for "disk" checking, default is 1, --block-reassigns-2-limit 5')
+        check_procedure.add_argument('--bad-blocks-1-limit', dest='bad_blocks_1_limit', type=int, default=1,
+                                        help='Number of Bad Blocks Port 1 warning threshold for "disk" checking, default is 1, --bad-blocks-1-limit 5')
+        check_procedure.add_argument('--bad-blocks-2-limit', dest='bad_blocks_2_limit', type=int, default=1,
+                                        help='Number of Bad Blocks Port 2 warning threshold for "disk" checking, default is 1, --bad-blocks-2-limit 5')
 
         self.options = parser.parse_args()
         
@@ -403,15 +405,23 @@ class CheckMSA:
         elif "pool usage" in device_property_name:
             warning_percent = performance_warn_crit_list[0]
             critical_percent = performance_warn_crit_list[1]
-            total_size = float(device_property_value[0].replace("GB", ""))
-            available_size = float(device_property_value[1].replace("GB", ""))
+            total_size_uom=device_property_value[0][-2:]
+            total_size = float(device_property_value[0].replace(total_size_uom, ""))
+            available_size_uom=device_property_value[1][-2:]
+            available_size = float(device_property_value[1].replace(available_size_uom, ""))
+
+            if available_size_uom != total_size_uom:
+                available_size = float(round(available_size / 1024,2))
+            
+            common_uom = total_size_uom
+
             used_size = round((total_size-available_size),1)
             device_performance_warning = round(((total_size/100)*warning_percent), 1)
             device_performance_critical = round(((total_size/100)*critical_percent), 1)
             used_percent = round(((used_size/total_size)*100),1)
 
             output = f"{device_name} usage is {used_percent}% ({used_size} GB/{total_size} GB)"
-            print(f"|{device_name} GB={used_size};{device_performance_warning};{device_performance_critical};0;{total_size};")
+            print(f"|{device_name} pool={used_size};{device_performance_warning};{device_performance_critical};0;{total_size};")
 
             if device_performance_critical <= used_size:
                 self.result_dict_append(device_name, "CRITICAL", output)
@@ -442,14 +452,21 @@ class CheckMSA:
         elif "volume usage" in device_property_name:
             warning_percent = performance_warn_crit_list[0]
             critical_percent = performance_warn_crit_list[1]
-            total_size = float(device_property_value[0].replace("GB", ""))
-            used_size = float(device_property_value[1].replace("GB", ""))
+            total_size_uom=device_property_value[0][-2:]
+            total_size = float(device_property_value[0].replace(total_size_uom, ""))
+            used_size_uom=device_property_value[1][-2:]
+            used_size = float(device_property_value[1].replace(used_size_uom, ""))
+
+            if used_size_uom != total_size_uom:
+                used_size = float(round(used_size / 1024,2))
+            
+            common_uom = total_size_uom
             device_performance_warning = round(((total_size/100)*warning_percent), 1)
             device_performance_critical = round(((total_size/100)*critical_percent), 1)
             used_percent = round(((used_size/total_size)*100),1)
 
-            output = f"{device_name} usage is {used_percent}% ({used_size} GB/{total_size} GB)"
-            print(f"|{device_name} GB={used_size};{device_performance_warning};{device_performance_critical};0;{total_size};")
+            output = f"{device_name} usage is {used_percent}% ({used_size} {common_uom}/{total_size} {common_uom})"
+            print(f"|{device_name}={used_size};{device_performance_warning};{device_performance_critical};0;{total_size};")
 
             if device_performance_critical <= used_size:
                 self.result_dict_append(device_name, "CRITICAL", output)
@@ -462,14 +479,9 @@ class CheckMSA:
 
         elif "iops usage" in device_property_name:
             iops = int(device_property_value[0])
-            transfer_match = re.search(r'(\d+\.\d+)(.*)', device_property_value[1])
-            transfer_speed = float(transfer_match.group(1))
-            transfer_unit = transfer_match.group(2)
-
-            if transfer_unit == "KB":
-                transfer_speed = round((transfer_speed/1024),2)
+            transfer_rate = float(device_property_value[1].replace(" MB", ""))
             
-            print(f"|{device_name} iops={iops};;;0;; {device_name} transfer speed={transfer_speed}MB;;;0;;")
+            print(f"|{device_name} iops={iops};;;0;; {device_name} transfer speed={transfer_rate}MB;;;0;;")
 
 
 
@@ -878,7 +890,7 @@ class CheckMSA:
 
         property_dict = {
             "volume name" : "./PROPERTY[@name='volume-name']",
-            "bytes-per-second" : "./PROPERTY[@name='bytes-per-second']",
+            "bytes-per-second" : "./PROPERTY[@name='bytes-per-second-numeric']",
             "iops" : "./PROPERTY[@name='iops']"
             }
         
@@ -888,6 +900,11 @@ class CheckMSA:
         
 
         self.device_part_list = self.get_xml_data_from_api(hostname, session_key, subcommand, property_dict)
+        
+        for item in self.device_part_list:
+            if 'bytes-per-second' in item:
+                item['bytes-per-second'] = f"{round(int(item['bytes-per-second']) / 1048576,2)} MB"
+        
         self.analyze_performance_difference(device_difference_dict, device_name_string=next(iter(property_dict)), ignore_list=ignore_list)
         
 
@@ -921,7 +938,6 @@ class CheckMSA:
             if len(final_result_list) != 0:
                 if any("CRITICAL" in x for x in final_result_list):
                     [print(x) for x in final_result_list if re.search("CRITICAL", x)]
-                    [print(x) for x in final_result_list if re.search("WARNING", x)]
                 elif any("WARNING" in x for x in final_result_list):
                     [print(x) for x in final_result_list if re.search("WARNING", x)]
                 elif any("UNKNOWN" in x for x in final_result_list):
@@ -930,12 +946,13 @@ class CheckMSA:
                     [print(x) for x in final_result_list if re.search("OK", x)]
 
         print("\n")
-
-        for device_dict in self.device_part_list:
-            for property_name, property_value in device_dict.items():
-                if property_name != "device_part":
-                    print(f"{property_name}\t{property_value}".expandtabs(40))
-            print("\n")
+        
+        if self.options.verbose == "True":
+            for device_dict in self.device_part_list:
+                for property_name, property_value in device_dict.items():
+                    if property_name != "device_part":
+                        print(f"{property_name}\t{property_value}".expandtabs(40))
+                print("\n")
 
         if any("CRITICAL" in x for x in result_list) or any("CRITICAL" in x for x in final_result_list):
             sys.exit(2)
