@@ -1,9 +1,12 @@
 # check_hpe_msa_storage
 
-COREX check HPE MSA 2050 storage plugin for Icinga 2 v1.1
+COREX check HPE MSA 2050 storage plugin for Icinga 2 v1.21
+COREX check DELL ME5024 storage plugin for Icinga 2 v1.21
+
  
 ### Features
- - checks HPE MSA 2050 Storage with username and password
+- The HPE MSA 2050 storage query platform is fully compatible with the DELL ME5024 storage platform, so this plugin can also be used for monitoring the DELL ME5024.
+ - checks HPE MSA 2050/DELL ME5024 Storage with username and password
  - prints performance data for Icinga 2 Graphite Module ( and other solutions like Graphite )
  - available subcommands: controllers, disk-groups, disks, fans, frus, network-parameters, pools, ports, power-supplies, sensor-status, system, volumes, volume-statistics
  - warning/critical thresholds for each separate subcommands
