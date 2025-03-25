@@ -70,11 +70,12 @@ controller health recommendation        None
 
 ### Version
 
- - v1.1
+ - v1.21
 
 ### ToDo
 
  - waiting for bugs or feature requests (-:
 
 ## Changelog
+ - v1.21 bug fixes, add --verbose option to control plugin output details
  - [initial release] version 1.1
