@@ -1,7 +1,7 @@
 # check_hpe_msa_storage
 
-- COREX check HPE MSA 2050 storage plugin for Icinga 2 v1.21
-- COREX check DELL ME5024 storage plugin for Icinga 2 v1.21
+- COREX check HPE MSA 2050 storage plugin for Icinga 2 v1.22
+- COREX check DELL ME5024 storage plugin for Icinga 2 v1.22
 
  
 ### Features
@@ -77,5 +77,6 @@ controller health recommendation        None
  - waiting for bugs or feature requests (-:
 
 ## Changelog
+ - v1.22 bug fixes, if disk wear status N/A
  - v1.21 bug fixes, add --verbose option to control plugin output details
  - [initial release] version 1.1
