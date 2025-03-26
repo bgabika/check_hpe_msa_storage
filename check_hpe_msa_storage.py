@@ -4,10 +4,11 @@
 # COREX check HPE MSA 2050 storage plugin for Icinga 2
 # Copyright (C) 2019-2023, Gabor Borsos <bg@corex.bg>
 # 
-# v1.21 built on 2025.03.22.
+# v1.22 built on 2025.03.25.
 # usage: check_hpe_msa_storage.py --help
 #
 # For bugs and feature requests mailto bg@corex.bg
+# v1.22 bug fixes, if disk wear status N/A
 # v1.21 bug fixes, add --verbose option to control plugin output details
 # ---------------------------------------------------------------
 # This program is free software; you can redistribute it and/or
@@ -361,7 +362,7 @@ class CheckMSA:
 
     def check_device_performances(self, device_name, performance_warn_crit_list, device_property_name, device_property_value):
         
-        if "life left" in device_property_name:
+        if "life left" in device_property_name and "%" in device_property_value:
             device_property_value = int(device_property_value.replace("%", ""))
             device_performance_warning = performance_warn_crit_list[0]
 
