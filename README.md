@@ -70,7 +70,7 @@ controller health recommendation        None
 
 ### Version
 
- - v1.21
+ - v1.22
 
 ### ToDo
 
